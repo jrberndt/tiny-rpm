@@ -9,9 +9,9 @@
 
 int Status;   // hier werden die jeweiligen Fehler ODER-Verknüpft
 
-void StausLED( int LEDPin = LED_BUILTIN);
 int fkt_Interval(unsigned long *pTimer, long _Interval );
-void blink(unsigned long *pTimer, long _Interval, int _LED, int _PulsePause = 1 );
+void blink(unsigned long *pTimer, long _Interval, int _LED, int _PulsePause);
+
 
 /**************************************************************************************
  * Author: J.Berndt
@@ -64,7 +64,7 @@ void init_StatusLED()
  * nur die wichtstigste Meldung darf durchkommen
  * siehe oben
  */
-void StausLED( int LEDPin = LED_BUILTIN) {
+void StatusLED( int LEDPin) {
 
   // Wenn kein Fehler vorliegt soll das Ready-Signal kommen
   if ( Status == 0 ) { Status = Status | 0x8; }
@@ -112,7 +112,7 @@ int fkt_Interval(unsigned long *pTimer, long _Interval ) {
  *   
  * laesst eine LED nach vorgegebenem Interval blinken
  ************************************************************************************/
-void blink(unsigned long *pTimer, long _Interval, int _LED, int _PulsePause = 1 ) {
+void blink(unsigned long *pTimer, long _Interval, int _LED, int _PulsePause ) {
 
   if (digitalRead(_LED) == LOW) {
     if ( fkt_Interval( pTimer, _Interval ) ) {
@@ -125,6 +125,50 @@ void blink(unsigned long *pTimer, long _Interval, int _LED, int _PulsePause = 1 
   }
 
 }
+
+
+
+unsigned long prevProbe_ms;
+int Rpm_Signal;
+int Rpm_Signal_alt;
+float UproMinute;
+
+/*           
+ *        U
+ * upm = ----- (Anzahl Schwingungen pro 60 Sek)
+ *        t 
+ *        
+ *             1
+ * freq = ---------- in Hz (Anzahl Schwingungen pro Sek.)
+ *          periode
+ *          
+ * Periode (P) entspricht 1 Schwingung (U)
+ * 
+ *         1
+ * upm = ----------------- * 60
+ *     t (ms) * 1000 
+ *
+ * 
+ */
+float get_rpmTime( int Probe ) {
+
+  unsigned long currentMillis = millis();
+
+  Rpm_Signal_alt = Rpm_Signal;
+  Rpm_Signal = digitalRead(Probe);
+  if ( Rpm_Signal != Rpm_Signal_alt && Rpm_Signal == LOW ) {
+
+    if ( millis() < prevProbe_ms ) { //Ueberlauf....
+      currentMillis = sizeof(long) - 1 - prevProbe_ms;
+    } else {
+      currentMillis = millis() - prevProbe_ms;
+    }
+    
+    return 60 / currentMillis / 1000;
+  }
+  
+}
+
 
 
 
